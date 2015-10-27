@@ -42,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
                                          " changdi varchar(32)"
                                          ");");
         query.exec(createTableSql);
+        qDebug() << createTableSql;
         database.commit();
         setModel();
     }
