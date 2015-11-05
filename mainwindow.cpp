@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QStringList>
+#include <QDate>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -29,13 +30,21 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBoxPlace->addItems(placeStringList);
 
     database = QSqlDatabase::addDatabase("QSQLITE");
-    database.setDatabaseName("xiaozu.db");
+    QString dbpath;
+
+#ifdef Q_OS_MAC
+dbpath = "/tmp/xiaozu.db";
+#else
+dbpath = "xiaozu.db";
+#endif
+    database.setDatabaseName(dbpath);
     if (!database.open()) {
         qDebug() << "Can not open xiaozu.db";
         QMessageBox::information(this, "", "无法连接数据库");
     } else {
         QSqlQuery query;
         QString createTableSql = QString("Create table xiaozu ("
+                                         " logdate varchar(32),"
                                          " receipt varchar(32), "
                                          " lang varchar(32), "
                                          " place varchar(32), "
@@ -67,11 +76,12 @@ void MainWindow::on_pushButtonSave_clicked()
     QString place = ui->comboBoxPlace->currentText();
     qDebug() << receipt << changdi << lang << place;
     ui->lineEditReceipt->clear();
+    QString logdate = QDate::currentDate().toString("yyyy-MM-dd");
 
     QSqlQuery query;
-    QString insert = QString("insert into xiaozu (receipt, lang, place, changdi) "
-                             " values ('%1', '%2', '%3', '%4');"
-                             ).arg(receipt).arg(lang).arg(place).arg(changdi);
+    QString insert = QString("insert into xiaozu (logdate, receipt, lang, place, changdi) "
+                             " values ('%1', '%2', '%3', '%4', '%5');"
+                             ).arg(logdate).arg(receipt).arg(lang).arg(place).arg(changdi);
     query.exec(insert);
     qDebug() << insert;
     qDebug() << query.lastError().text();
@@ -95,11 +105,12 @@ void MainWindow::on_pushButtonExport_clicked()
     QTextStream out(&data);
     model->select();
     for(int i = 0; i < model->rowCount(); ++i) {
+        QString logdate = model->record(i).value("logdate").toString();
         QString receipt = model->record(i).value("receipt").toString();
         QString lang = model->record(i).value("lang").toString();
         QString place = model->record(i).value("place").toString();
         QString changdi = model->record(i).value("changdi").toString();
-        out << receipt << "," << lang << "," << place << "," << changdi << "\n";
+        out << logdate << "," << receipt << "," << lang << "," << place << "," << changdi << "\n";
     }
 
     data.close();
@@ -111,10 +122,25 @@ int MainWindow::setModel()
     model->setTable("xiaozu");
     model->setEditStrategy(QSqlTableModel::OnFieldChange);
     model->setSort(0, Qt::AscendingOrder);
-    model->setHeaderData(0, Qt::Horizontal, "收据号");
-    model->setHeaderData(1, Qt::Horizontal, "语言");
-    model->setHeaderData(2, Qt::Horizontal, "山上、山下或京外");
-    model->setHeaderData(3, Qt::Horizontal, "场地编号");
+    model->setHeaderData(0, Qt::Horizontal, "日期");
+    model->setHeaderData(1, Qt::Horizontal, "收据号");
+    model->setHeaderData(2, Qt::Horizontal, "语言");
+    model->setHeaderData(3, Qt::Horizontal, "山上、山下或京外");
+    model->setHeaderData(4, Qt::Horizontal, "场地编号");
     ui->tableView->setModel(model);
+    model->select();
+    ui->tableView->reset();
     return true;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    QSqlQuery query;
+    QString createTableSql = QString("delete from xiaozu");
+    query.exec(createTableSql);
+    qDebug() << createTableSql;
+    database.commit();
+
+    model->select();
+    ui->tableView->reset();
 }
