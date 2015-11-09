@@ -18,3 +18,10 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h
 
 FORMS    += mainwindow.ui
+
+RESOURCES += \
+    pics/pic.qrc
+
+DISTFILES += \
+    pics/place.png \
+    pics/trash.png

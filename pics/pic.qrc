@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>place.png</file>
+        <file>trash.png</file>
+        <file>export.png</file>
+        <file>save.png</file>
+    </qresource>
+</RCC>
