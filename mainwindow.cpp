@@ -10,6 +10,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // set lineEdit
+    QRegExp regxChangdi("[1-9][0-9]$");
+    QValidator *validChangdi = new QRegExpValidator(regxChangdi, ui->lineEditChangdi);
+    ui->lineEditChangdi->setValidator(validChangdi);
+
+
+    QRegExp regxReceipt("^[A-Ba-b][0-9][0-9][0-9][0-9]$");
+    QValidator *validReceipt = new QRegExpValidator(regxReceipt, ui->lineEditReceipt);
+    ui->lineEditReceipt->setValidator(validReceipt);
+
     database = QSqlDatabase::addDatabase("QSQLITE");
     QString dbpath;
 #ifdef Q_OS_MAC
@@ -49,13 +59,18 @@ MainWindow::~MainWindow()
 void MainWindow::on_pushButtonSave_clicked()
 {
     QString receipt = ui->lineEditReceipt->text().toUpper();
-    if (receipt.isEmpty()) {
-        qDebug() << "receipt should not be empty";
-        QMessageBox::information(this, "", "收据号不能为空");
+    QString changdi = ui->lineEditChangdi->text().trimmed();
+
+    if (receipt.isEmpty() || changdi.isEmpty()) {
+        QMessageBox::information(this, "", "收据号和场地不能为空");
         return;
     }
 
-    QString changdi = ui->lineEditChangdi->text().trimmed();
+    if (receipt.length() != 5) {
+        QMessageBox::information(this, "", "收据号的长度应该是5，如: A0001 或者 B0001");
+        ui->lineEditReceipt->setFocus();
+        return;
+    }
 
     ui->lineEditReceipt->clear();
     ui->lineEditChangdi->clear();
